@@ -72,4 +72,3 @@ class InsufficientStockException extends Exception
         ], 422);
     }
 }
-

@@ -6,34 +6,46 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
-use App\Models\Product;
+use App\Services\ProductService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Throwable;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
     /**
      * List product catalog for billing selection.
      */
-    public function index(): AnonymousResourceCollection
+    public function index(): AnonymousResourceCollection|JsonResponse
     {
-        $products = Product::orderBy('name', 'asc')->get();
+        try {
+            $products = $this->productService->getAllProducts();
 
-        return ProductResource::collection($products);
+            return ProductResource::collection($products);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'An error occurred while fetching products.',
+            ], 500);
+        }
     }
 
     /**
      * List products at or below the configured low-stock threshold.
      */
-    public function lowStock(): AnonymousResourceCollection
+    public function lowStock(): AnonymousResourceCollection|JsonResponse
     {
-        $threshold = (int) config('inventory.low_stock_threshold', 10);
+        try {
+            $products = $this->productService->getLowStockProducts();
 
-        $products = Product::where('stock_on_hand', '<=', $threshold)
-            ->orderBy('stock_on_hand', 'asc')
-            ->orderBy('name', 'asc')
-            ->get();
-
-        return ProductResource::collection($products);
+            return ProductResource::collection($products);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'An error occurred while fetching low-stock products.',
+            ], 500);
+        }
     }
 }
-

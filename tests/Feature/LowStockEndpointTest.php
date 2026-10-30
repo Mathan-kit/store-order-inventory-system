@@ -56,4 +56,3 @@ test('honours dynamic config override for low-stock threshold', function () {
     expect($pMid->isLowStock())->toBeFalse();
     expect($pHigh->isLowStock())->toBeFalse();
 });
-

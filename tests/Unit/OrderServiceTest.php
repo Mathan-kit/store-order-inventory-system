@@ -69,4 +69,3 @@ test('sequential double-order on stock 1 causes second order to throw Insufficie
     expect(Order::count())->toBe(1);
     expect(Customer::where('email', 'buyer2@example.com')->exists())->toBeFalse();
 });
-

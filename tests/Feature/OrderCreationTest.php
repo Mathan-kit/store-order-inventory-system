@@ -337,4 +337,3 @@ test('order item snapshot keeps original unit price after product price changes 
     expect($orderItem->unit_price)->toBe('100.00');
     expect($product->fresh()->price)->toBe('199.99');
 });
-

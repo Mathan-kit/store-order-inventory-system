@@ -4,33 +4,42 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\CustomerNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
-use App\Models\Customer;
+use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class CustomerController extends Controller
 {
+    public function __construct(
+        protected CustomerService $customerService
+    ) {}
+
     /**
      * Retrieve customer basic profile by email for auto-fill.
      */
     public function show(string $email): JsonResponse
     {
-        $normalizedEmail = strtolower(trim($email));
-        $customer = Customer::where('email', $normalizedEmail)->first();
+        try {
+            $customer = $this->customerService->findByEmail($email);
 
-        if (! $customer) {
             return response()->json([
-                'message' => 'Customer not found.',
+                'data' => [
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                ],
+            ]);
+        } catch (CustomerNotFoundException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
             ], 404);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'An unexpected error occurred.',
+            ], 500);
         }
-
-        return response()->json([
-            'data' => [
-                'name' => $customer->name,
-                'email' => $customer->email,
-            ],
-        ]);
     }
 
     /**
@@ -38,21 +47,18 @@ class CustomerController extends Controller
      */
     public function orders(string $email): JsonResponse
     {
-        $normalizedEmail = strtolower(trim($email));
-        $customer = Customer::where('email', $normalizedEmail)->first();
+        try {
+            $orders = $this->customerService->getCustomerOrders($email, 15);
 
-        if (! $customer) {
+            return OrderResource::collection($orders)->response();
+        } catch (CustomerNotFoundException $e) {
             return response()->json([
-                'message' => 'Customer not found.',
+                'message' => $e->getMessage(),
             ], 404);
+        } catch (Throwable) {
+            return response()->json([
+                'message' => 'An unexpected error occurred.',
+            ], 500);
         }
-
-        $orders = $customer->orders()
-            ->with(['customer', 'items.product'])
-            ->latest('created_at')
-            ->latest('id')
-            ->paginate(15);
-
-        return OrderResource::collection($orders)->response();
     }
 }
