@@ -422,3 +422,7 @@ php artisan test tests/Feature/ConcurrentOrderStockTest.php
 11. **Currency**: All amounts are denominated in Indian Rupees (INR, ₹).
 12. **Default Order Status**: New orders default to status `confirmed` (`App\Enums\OrderStatus::Confirmed`).
 13. **Prompt Log Location**: Detailed prompt instructions and specifications are preserved in `/prompts` (`prompts/takehome_build_prompt.md`).
+14. **Single-Tenant Scope & Multi-Tenant Architecture**: The current build assumes a single-tenant retail deployment (single store / counter operation) to prioritize rock-solid inventory concurrency, minimal package overhead, and standard Laravel idioms as specified in the assignment. In a multi-tenant evolution:
+    - **Tenant Isolation**: Tables (`products`, `customers`, `orders`, `order_items`) would include a `tenant_id` foreign key with automatic tenant scoping via Eloquent Global Scopes or dedicated per-tenant databases (e.g., using `stancl/tenancy`).
+    - **Composite Unique Indexes**: Uniqueness rules would be tenant-scoped (e.g., `unique(['tenant_id', 'code'])` and `unique(['tenant_id', 'email'])`), enabling distinct store branches to manage identical SKU codes and independent customer histories.
+    - **Isolated Concurrency & Locking**: Row-level pessimistic locking (`lockForUpdate`) in `OrderService` would be scoped strictly to the authenticated tenant, ensuring inventory contention on one tenant never impacts transactions of another.
